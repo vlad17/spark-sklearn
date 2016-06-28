@@ -307,7 +307,6 @@ class KeyedModelTests(RandomTest):
                                        sklearnEstimator=LinearRegression(), yCol="myy",
                                        xCol="myfeatures", keyCols=["mykey1", "mykey2"])
 
-    @unittest.skip("python vector nulls are unsupported for now, see SPARK-16175")
     def test_surprise_key(self):
         ke = KeyedEstimator(sklearnEstimator=PCA())
         schema = StructType().add("features", LongType()).add("key", LongType())
@@ -316,14 +315,14 @@ class KeyedModelTests(RandomTest):
 
         self.assertEqual(km.keyedModels.collect(), [])
         self.assertEqual(km.keyedModels.dtypes,
-                         [("key", LongType().simpleString()),
+                         [("key", "bigint"),
                           ("estimator", "sklearn-estimator")])
 
         df = self.spark.createDataFrame([(1, 2)], schema)
         df = km.transform(df)
 
         self.assertEqual(df.collect(), [(1, 2, None)])
-        self.assertEqual(km.keyedModels.dtypes,
+        self.assertEqual(df.dtypes,
                          [("features", "bigint"),
                           ("key", "bigint"),
                           ("output", "vector")])
