@@ -38,6 +38,7 @@ and aggregated dataframe.
 <BLANKLINE>
 >>> km = KeyedEstimator(sklearnEstimator=LinearRegression(), yCol="y").fit(df)
 >>> def printFloat(x):
+...     if x is None: return "None"
 ...     return "{:.2f}".format(round(x, 2))
 ...
 >>> def printModel(model):
@@ -59,15 +60,16 @@ and aggregated dataframe.
 <BLANKLINE>
 
 Now that we have generated a linear model for each key, we can apply it to keyed test data.
-In the following, we only show one point for simplicity, but the test data can contain multiple
-points for multiple different keys.
+Note that any new keys will get a null prediction, since no model was fitted for them.
 
->>> input = spark.createDataFrame([(0, Vectors.dense(3, 1, -1))]).toDF("key", "features")
+>>> input = spark.createDataFrame([(0, Vectors.dense(3, 1, -1)),
+...                                (3, Vectors.dense(0, 0, 0))]).toDF("key", "features")
 >>> km.transform(input).withColumn("output", udf(printFloat)("output")).show()
 +---+--------------+------+
 |key|      features|output|
 +---+--------------+------+
 |  0|[3.0,1.0,-1.0]|  2.00|
+|  3| [0.0,0.0,0.0]|  None|
 +---+--------------+------+
 <BLANKLINE>
 
@@ -99,6 +101,7 @@ some other clusterers, such as ``DBSCAN``.
 |key|      features|cluster label|
 +---+--------------+-------------+
 |  0|[3.0,1.0,-1.0]|            1|
+|  3| [0.0,0.0,0.0]|         null|
 +---+--------------+-------------+
 <BLANKLINE>
 >>> spark.stop(); SparkSession._instantiatedContext = None # clear hidden SparkContext for reuse
